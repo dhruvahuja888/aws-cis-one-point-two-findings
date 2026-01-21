@@ -18,10 +18,10 @@ phases:
       - |
         cat > /tmp/sh-filters.json <<EOF
         {
-          "StandardsControlArn": [
+          "StandardslArn": [
             {
-              "Value": "arn:aws:securityhub:::ruleset/cis-aws-foundations-benchmark/v/1.2.0",
-              "Comparison": "PREFIX"
+              "Value": "arn:aws:securityhub:::standards/cis-aws-foundations-benchmark/v/1.2.0",
+              "Comparison": "EQUALS"
             }
           ]
         }
