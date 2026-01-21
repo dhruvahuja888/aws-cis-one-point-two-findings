@@ -5,19 +5,10 @@ env:
     OUTPUT_DIR: "output"
 
 phases:
-  install:
-    runtime-versions:
-      python: 3.11
-    commands:
-      - echo "Installing AWS CLI v2 (if not already available)..."
-      - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-      - unzip awscliv2.zip
-      - sudo ./aws/install
-      - aws --version
-      - mkdir -p $OUTPUT_DIR
-
   build:
     commands:
+      - echo "Creating output directory..."
+      - mkdir -p $OUTPUT_DIR
       - echo "Fetching Security Hub CIS 1.2 findings..."
       - aws securityhub get-findings --filters '{"StandardsArn":[{"Value":"arn:aws:securityhub:::standards/cis-aws-foundations-benchmark/v/1.2.0","Comparison":"EQUALS"}]}' --output json > "$OUTPUT_DIR/securityhub-cis-1.2.json"
       - echo "Security Hub findings saved to $OUTPUT_DIR/securityhub-cis-1.2.json"
