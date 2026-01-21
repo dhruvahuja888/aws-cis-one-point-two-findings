@@ -26,7 +26,7 @@ phases:
       - jq '.Findings[] 
             | select(.Compliance.AssociatedStandards? != null) 
             | select(.Compliance.AssociatedStandards[].StandardsId == "ruleset/cis-aws-foundations-benchmark/v/1.2.0")' \
-            "$OUTPUT_DIR/all_failed_findings.json" > "$OUTPUT_DIR/cis_1_2_failed.json"
+            "$OUTPUT_DIR/all_failed_findings.json" > "$OUTPUT_DIR/cis_1_2_failed.json" || true
 
       - echo "Filtered CIS 1.2 failed findings saved to $OUTPUT_DIR/cis_1_2_failed.json"
 
