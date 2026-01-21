@@ -3,6 +3,7 @@ version: 0.2
 env:
   variables:
     OUTPUT_DIR: "securityhub-output"
+    AWS_REGION: "eu-central-1"
 
 phases:
   install:
@@ -13,16 +14,25 @@ phases:
   build:
     commands:
       - echo "Creating output directory..."
-      - mkdir -p $OUTPUT_DIR
+      - mkdir -p "$OUTPUT_DIR"
+
+      - echo "Preparing Security Hub filter..."
+      # Store the JSON filter in a variable for readability
+      - FILTERS="{\"ComplianceStatus\":[{\"Value\":\"FAILED\",\"Comparison\":\"EQUALS\"}],\"ProductName\":[{\"Value\":\"Security Hub\",\"Comparison\":\"EQUALS\"}]}"
 
       - echo "Fetching all failed Security Hub findings..."
-      # Use a single-line command to avoid YAML parsing issues
-      - aws securityhub get-findings --region eu-central-1 --filters "{\"ComplianceStatus\":[{\"Value\":\"FAILED\",\"Comparison\":\"EQUALS\"}],\"ProductName\":[{\"Value\":\"Security Hub\",\"Comparison\":\"EQUALS\"}]}" --max-results 100 --output json > "$OUTPUT_DIR/all_failed_findings.json" || echo '{"Findings":[]}' > "$OUTPUT_DIR/all_failed_findings.json"
+      - aws securityhub get-findings \
+          --region "$AWS_REGION" \
+          --filters "$FILTERS" \
+          --max-results 100 \
+          --output json > "$OUTPUT_DIR/all_failed_findings.json" \
+          || echo '{"Findings":[]}' > "$OUTPUT_DIR/all_failed_findings.json"
+
       - echo "Filtering only CIS AWS Foundations Benchmark v1.2.0 failed findings..."
       - jq '.Findings[] 
             | select(.Compliance.AssociatedStandards? != null) 
             | select(.Compliance.AssociatedStandards[].StandardsId == "ruleset/cis-aws-foundations-benchmark/v/1.2.0")' \
-            "$OUTPUT_DIR/all_failed_findings.json" > "$OUTPUT_DIR/cis_1_2_failed.json" || true
+          "$OUTPUT_DIR/all_failed_findings.json" > "$OUTPUT_DIR/cis_1_2_failed.json" || true
 
       - echo "Filtered CIS 1.2 failed findings saved to $OUTPUT_DIR/cis_1_2_failed.json"
 
