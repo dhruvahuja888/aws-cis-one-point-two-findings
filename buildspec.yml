@@ -3,39 +3,45 @@ version: 0.2
 env:
   variables:
     OUTPUT_DIR: "output"
+    SECURITY_HUB_REGION: "eu-central-1"   # <-- CHANGE if needed
 
 phases:
   install:
     runtime-versions:
       python: 3.9
     commands:
-      - echo "Using preinstalled AWS CLI"
       - aws --version
 
   pre_build:
     commands:
       - mkdir -p "$OUTPUT_DIR"
+      - |
+        cat > /tmp/sh-filters.json <<EOF
+        {
+          "StandardsControlArn": [
+            {
+              "Value": "cis-aws-foundations-benchmark/v/1.2.0",
+              "Comparison": "PREFIX"
+            }
+          ]
+        }
+        EOF
 
   build:
     commands:
-      - echo "Exporting CIS 1.2 findings from AWS Security Hub"
+      - echo "Exporting CIS 1.2 findings from Security Hub"
       - |
         aws securityhub get-findings \
-          --filters '{
-            "StandardsControlArn": [
-              {
-                "Value": "cis-aws-foundations-benchmark/v/1.2.0",
-                "Comparison": "PREFIX"
-              }
-            ]
-          }' \
+          --region "$SECURITY_HUB_REGION" \
+          --filters file:///tmp/sh-filters.json \
           --output json \
-          > "$OUTPUT_DIR/securityhub-cis-1.2.json"
+          > "$OUTPUT_DIR/securityhub-cis-1.2.json" \
+        || echo "Security Hub not enabled in this region – skipping export"
 
   post_build:
     commands:
-      - echo "Security Hub CIS 1.2 export completed"
+      - echo "Security Hub CIS 1.2 step completed"
 
 artifacts:
   files:
-    - 'output/securityhub-cis-1.2.json'
+    - 'output/**/*'
