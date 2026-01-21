@@ -1,0 +1,41 @@
+version: 0.2
+
+env:
+  variables:
+    OUTPUT_DIR: "output"
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      - echo "Using preinstalled AWS CLI"
+      - aws --version
+
+  pre_build:
+    commands:
+      - mkdir -p "$OUTPUT_DIR"
+
+  build:
+    commands:
+      - echo "Exporting CIS 1.2 findings from AWS Security Hub"
+      - |
+        aws securityhub get-findings \
+          --filters '{
+            "StandardsControlArn": [
+              {
+                "Value": "cis-aws-foundations-benchmark/v/1.2.0",
+                "Comparison": "PREFIX"
+              }
+            ]
+          }' \
+          --output json \
+          > "$OUTPUT_DIR/securityhub-cis-1.2.json"
+
+  post_build:
+    commands:
+      - echo "Security Hub CIS 1.2 export completed"
+
+artifacts:
+  files:
+    - 'output/securityhub-cis-1.2.json'
