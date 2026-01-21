@@ -3,29 +3,32 @@ version: 0.2
 phases:
   install:
     commands:
-      - echo Installing jq if not present
-      - command -v jq || sudo yum install -y jq   # for Amazon Linux, adjust if different
+      - echo "Installing jq if not present..."
+      - command -v jq || sudo yum install -y jq   # for Amazon Linux, adjust if needed
 
   build:
     commands:
-      - echo "Fetching all failed Security Hub findings..."
+      - echo "Setting up output directory..."
       - OUTPUT_DIR="$HOME/securityhub-output"
       - mkdir -p "$OUTPUT_DIR"
-      # Fetch all failed Security Hub findings (max-results 100 per page, loop if needed)
+
+      - echo "Fetching all failed Security Hub findings..."
       - aws securityhub get-findings \
           --region eu-central-1 \
-          --filters '{
+          --filters |
+            {
               "ComplianceStatus": [{"Value": "FAILED", "Comparison": "EQUALS"}],
               "ProductName": [{"Value": "Security Hub", "Comparison": "EQUALS"}]
-          }' \
+            } \
           --max-results 100 \
-          --output json > "$OUTPUT_DIR/all_failed_findings.json" || echo '{"Findings":[]}' > "$OUTPUT_DIR/all_failed_findings.json"
+          --output json > "$OUTPUT_DIR/all_failed_findings.json" \
+          || echo '{"Findings":[]}' > "$OUTPUT_DIR/all_failed_findings.json"
 
       - echo "Filtering findings for CIS AWS Foundations Benchmark v1.2.0..."
-      - jq '.Findings[] 
-            | select(.Compliance.AssociatedStandards? != null) 
+      - jq '.Findings[]
+            | select(.Compliance.AssociatedStandards? != null)
             | select(.Compliance.AssociatedStandards[].StandardsId == "ruleset/cis-aws-foundations-benchmark/v/1.2.0")' \
-          "$OUTPUT_DIR/all_failed_findings.json" > "$OUTPUT_DIR/cis_1_2_failed.json"
+            "$OUTPUT_DIR/all_failed_findings.json" > "$OUTPUT_DIR/cis_1_2_failed.json"
 
       - echo "Filtered CIS 1.2 failed findings saved to $OUTPUT_DIR/cis_1_2_failed.json"
 
