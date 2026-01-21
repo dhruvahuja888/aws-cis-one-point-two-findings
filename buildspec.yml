@@ -19,17 +19,7 @@ phases:
   build:
     commands:
       - echo "Fetching Security Hub CIS 1.2 findings..."
-      - aws securityhub get-findings --filters "$(cat <<'EOF'
-{
-  "StandardsArn": [
-    {
-      "Value": "arn:aws:securityhub:::standards/cis-aws-foundations-benchmark/v/1.2.0",
-      "Comparison": "EQUALS"
-    }
-  ]
-}
-EOF
-)" --output json > "$OUTPUT_DIR/securityhub-cis-1.2.json"
+      - aws securityhub get-findings --filters '{"StandardsArn":[{"Value":"arn:aws:securityhub:::standards/cis-aws-foundations-benchmark/v/1.2.0","Comparison":"EQUALS"}]}' --output json > "$OUTPUT_DIR/securityhub-cis-1.2.json"
       - echo "Security Hub findings saved to $OUTPUT_DIR/securityhub-cis-1.2.json"
 
 artifacts:
