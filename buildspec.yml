@@ -16,9 +16,9 @@ phases:
       - mkdir -p $OUTPUT_DIR
 
       - echo "Fetching all failed Security Hub findings..."
-      - aws securityhub get-findings \
-          --region eu-central-1 \
-          --filters "{\"ComplianceStatus\":[{\"Value\":\"FAILED\",\"Comparison\":\"EQUALS\"}],\"ProductName\":[{\"Value\":\"Security Hub\",\"Comparison\":\"EQUALS\"}]}" \
+      - |
+        aws securityhub get-findings --region eu-central-1 \
+          --filters '{"ComplianceStatus":[{"Value":"FAILED","Comparison":"EQUALS"}],"ProductName":[{"Value":"Security Hub","Comparison":"EQUALS"}]}' \
           --max-results 100 \
           --output json > "$OUTPUT_DIR/all_failed_findings.json" || echo '{"Findings":[]}' > "$OUTPUT_DIR/all_failed_findings.json"
 
