@@ -8,34 +8,23 @@ env:
 phases:
   install:
     commands:
-      - echo "Installing jq if not already installed..."
+      - echo "Installing jq if not present"
       - command -v jq || sudo yum install -y jq
 
   build:
     commands:
-      - echo "Creating output directory..."
+      - echo "Creating output directory"
       - mkdir -p "$OUTPUT_DIR"
 
-      - echo "Preparing Security Hub filter..."
-      # Store the JSON filter in a variable for readability
+      - echo "Fetching failed Security Hub findings"
       - FILTERS="{\"ComplianceStatus\":[{\"Value\":\"FAILED\",\"Comparison\":\"EQUALS\"}],\"ProductName\":[{\"Value\":\"Security Hub\",\"Comparison\":\"EQUALS\"}]}"
+      - aws securityhub get-findings --region "$AWS_REGION" --filters "$FILTERS" --max-results 100 --output json > "$OUTPUT_DIR/all_failed_findings.json" || echo '{"Findings":[]}' > "$OUTPUT_DIR/all_failed_findings.json"
 
-      - echo "Fetching all failed Security Hub findings..."
-      - aws securityhub get-findings \
-          --region "$AWS_REGION" \
-          --filters "$FILTERS" \
-          --max-results 100 \
-          --output json > "$OUTPUT_DIR/all_failed_findings.json" \
-          || echo '{"Findings":[]}' > "$OUTPUT_DIR/all_failed_findings.json"
+      - echo "Filtering CIS AWS Foundations Benchmark v1.2.0 findings"
+      - jq '.Findings[] | select(.Compliance.AssociatedStandards? != null) | select(.Compliance.AssociatedStandards[].StandardsId == "ruleset/cis-aws-foundations-benchmark/v/1.2.0")' "$OUTPUT_DIR/all_failed_findings.json" > "$OUTPUT_DIR/cis_1_2_failed.json" || true
 
-      - echo "Filtering only CIS AWS Foundations Benchmark v1.2.0 failed findings..."
-      - jq '.Findings[] 
-            | select(.Compliance.AssociatedStandards? != null) 
-            | select(.Compliance.AssociatedStandards[].StandardsId == "ruleset/cis-aws-foundations-benchmark/v/1.2.0")' \
-          "$OUTPUT_DIR/all_failed_findings.json" > "$OUTPUT_DIR/cis_1_2_failed.json" || true
-
-      - echo "Filtered CIS 1.2 failed findings saved to $OUTPUT_DIR/cis_1_2_failed.json"
+      - echo "CIS 1.2 findings written to $OUTPUT_DIR/cis_1_2_failed.json"
 
 artifacts:
   files:
-    - "securityhub-output/cis_1_2_failed.json"
+    - securityhub-output/cis_1_2_failed.json
