@@ -16,11 +16,8 @@ phases:
       - mkdir -p $OUTPUT_DIR
 
       - echo "Fetching all failed Security Hub findings..."
-      - |
-        aws securityhub get-findings --region eu-central-1 \
-          --filters '{"ComplianceStatus":[{"Value":"FAILED","Comparison":"EQUALS"}],"ProductName":[{"Value":"Security Hub","Comparison":"EQUALS"}]}' \
-          --max-results 100 \
-          --output json > "$OUTPUT_DIR/all_failed_findings.json" || echo '{"Findings":[]}' > "$OUTPUT_DIR/all_failed_findings.json"
+      # Use a single-line command to avoid YAML parsing issues
+      - aws securityhub get-findings --region eu-central-1 --filters '{"ComplianceStatus":[{"Value":"FAILED","Comparison":"EQUALS"}],"ProductName":[{"Value":"Security Hub","Comparison":"EQUALS"}]}' --max-results 100 --output json > "$OUTPUT_DIR/all_failed_findings.json" || echo '{"Findings":[]}' > "$OUTPUT_DIR/all_failed_findings.json"
 
       - echo "Filtering only CIS AWS Foundations Benchmark v1.2.0 failed findings..."
       - jq '.Findings[] 
